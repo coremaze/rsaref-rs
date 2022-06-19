@@ -33,17 +33,13 @@ impl RandomStruct {
 
         /* add digest to state */
         let mut x: u32 = 0;
-        for i in 0..16 {
-            x += self.state[15 - i] as u32 + digest[15 - i] as u32;
-            self.state[15 - i] = (x & 0xFF) as u8;
+        for (state_byte, digest_byte) in self.state.iter_mut().zip(digest) {
+            x += *state_byte as u32 + digest_byte as u32;
+            *state_byte = (x & 0xFF) as u8;
             x >>= 8;
         }
 
-        if self.bytes_needed < block.len() {
-            self.bytes_needed = 0;
-        } else {
-            self.bytes_needed -= block.len();
-        }
+        self.bytes_needed = self.bytes_needed.saturating_sub(block.len());
     }
 
     pub fn get_random_bytes_needed(&self) -> usize {

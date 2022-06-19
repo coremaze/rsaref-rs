@@ -1,6 +1,5 @@
 mod r_random;
-pub use r_random::{RandomStruct};
-
+pub use r_random::RandomStruct;
 
 #[derive(Debug)]
 pub enum RSAError {

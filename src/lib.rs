@@ -2,7 +2,7 @@ mod r_random;
 pub use r_random::RandomStruct;
 
 mod nn;
-pub use nn::{NNDigit, NNHalfDigit};
+pub use nn::{NNDigit, NNDigits, NNHalfDigit};
 
 #[derive(Debug)]
 pub enum RSAError {

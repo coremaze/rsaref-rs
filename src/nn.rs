@@ -79,7 +79,7 @@ impl NNDigits {
     }
 
     /* Assigns self = 0 */
-    pub fn assign_zero(&mut self)  {
+    pub fn assign_zero(&mut self) {
         self.digits = vec![NNDigit::new(0)];
     }
 
@@ -93,7 +93,9 @@ impl NNDigits {
 
 impl Default for NNDigits {
     fn default() -> Self {
-        Self { digits: vec![NNDigit::default()] }
+        Self {
+            digits: vec![NNDigit::default()],
+        }
     }
 }
 

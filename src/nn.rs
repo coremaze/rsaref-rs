@@ -47,7 +47,7 @@ impl NNDigit {
                 // Get uppermost byte of n
                 let top_byte = n & ((u8::MAX as u32) << (u32::BITS - u8::BITS));
 
-                // move the uppermost byte down the the least significant byte
+                // move the uppermost byte down to the least significant byte
                 let byte = ((top_byte >> (u32::BITS - u8::BITS)) % (u8::MAX as u32 + 1)) as u8;
 
                 // Move the next byte in n to the top

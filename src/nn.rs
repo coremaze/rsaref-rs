@@ -89,6 +89,61 @@ impl NNDigits {
         self.digits = vec![NNDigit::new(0); offset + 1];
         self.digits[offset] = NNDigit::new(1 << (exp % u32::BITS));
     }
+
+    /* Computes result = self + other */
+    pub fn add(&self, other: &Self) -> Self {
+        let mut carry = 0;
+        let mut result_digits = Vec::<NNDigit>::new();
+
+        let mut selfdigits = self.digits.clone();
+        let mut otherdigits = other.digits.clone();
+
+        // Extend the number with fewer digits to have the same number of digits
+        if selfdigits.len() < otherdigits.len() {
+            for _ in 0..(otherdigits.len() - selfdigits.len()) {
+                selfdigits.push(NNDigit::new(0));
+            }
+        } else {
+            for _ in 0..(selfdigits.len() - otherdigits.len()) {
+                otherdigits.push(NNDigit::new(0));
+            }
+        }
+
+        for (n1, n2) in selfdigits.iter().zip(otherdigits.iter()) {
+            // n1 + carry
+            let ai_n = match n1.n.checked_add(carry) {
+                None => {
+                    // Overflowed
+                    n2.n
+                }
+                Some(n1_plus_carry) => {
+                    // Did not overflow
+                    match n1_plus_carry.checked_add(n2.n) {
+                        None => {
+                            //Overflowed
+                            carry = 1;
+                            n1_plus_carry.wrapping_add(n2.n)
+                        }
+                        Some(n1_plus_carry_plus_n2) => {
+                            // No overflow
+                            carry = 0;
+                            n1_plus_carry_plus_n2
+                        }
+                    }
+                }
+            };
+
+            result_digits.push(NNDigit::new(ai_n));
+        }
+
+        if carry != 0 {
+            result_digits.push(NNDigit::new(carry));
+        }
+
+        Self {
+            digits: result_digits,
+        }
+    }
 }
 
 impl Default for NNDigits {
@@ -184,5 +239,32 @@ mod tests {
         ]);
 
         assert_eq!(num.cmp(&correct_digits), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_add1() {
+        let operand1 = NNDigits::new(&[NNDigit::new(12345), NNDigit::new(54321)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(5555555), NNDigit::new(9999999)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(5567900), NNDigit::new(10054320)]);
+        let result = operand1.add(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_add2() {
+        let operand1 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(1)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(0), NNDigit::new(0), NNDigit::new(1)]);
+        let result = operand1.add(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_add3() {
+        let operand1 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(1)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(4294967294), NNDigit::new(2)]);
+        let result = operand1.add(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

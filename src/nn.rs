@@ -103,7 +103,10 @@ impl NNDigits {
 
     /* Computes result = self + other */
     pub fn add(&self, other: &Self) -> Self {
-        assert!(self.digits.len() == other.digits.len(), "add operation requires operands to be the same length");
+        assert!(
+            self.digits.len() == other.digits.len(),
+            "add operation requires operands to be the same length"
+        );
         let mut carry = 0;
         let mut result_digits = Vec::<NNDigit>::new();
 
@@ -118,7 +121,7 @@ impl NNDigits {
                     // Did not overflow
                     match n1_plus_carry.checked_add(n2.n) {
                         None => {
-                            //Overflowed
+                            // Overflowed
                             carry = 1;
                             n1_plus_carry.wrapping_add(n2.n)
                         }
@@ -126,6 +129,48 @@ impl NNDigits {
                             // No overflow
                             carry = 0;
                             n1_plus_carry_plus_n2
+                        }
+                    }
+                }
+            };
+
+            result_digits.push(NNDigit::new(ai_n));
+        }
+
+        assert!(self.digits.len() == result_digits.len());
+
+        Self {
+            digits: result_digits,
+        }
+    }
+
+    pub fn sub(&self, other: &Self) -> Self {
+        assert!(
+            self.digits.len() == other.digits.len(),
+            "sub operation requires operands to be the same length"
+        );
+        let mut borrow = 0;
+        let mut result_digits = Vec::<NNDigit>::with_capacity(self.digits.len());
+
+        for (n1, n2) in self.digits.iter().zip(other.digits.iter()) {
+            // n1 - borrow
+            let ai_n = match n1.n.checked_sub(borrow) {
+                None => {
+                    // Underflowed
+                    u32::MAX - n2.n
+                }
+                Some(n1_minus_borrow) => {
+                    // Did not underflow
+                    match n1_minus_borrow.checked_sub(n2.n) {
+                        None => {
+                            // Underflowed
+                            borrow = 1;
+                            n1_minus_borrow.wrapping_sub(n2.n)
+                        }
+                        Some(n1_minus_borrow_minus_n2) => {
+                            // No underflow
+                            borrow = 0;
+                            n1_minus_borrow_minus_n2
                         }
                     }
                 }
@@ -296,5 +341,41 @@ mod tests {
         let correct_result = NNDigits::new(&[NNDigit::new(123)]);
         operand.set_digit_count(1);
         assert_eq!(operand.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_sub1() {
+        let operand1 = NNDigits::new(&[NNDigit::new(1), NNDigit::new(1)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(2), NNDigit::new(1)]);
+        let result = operand1.sub(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_sub2() {
+        let operand1 = NNDigits::new(&[NNDigit::new(12345), NNDigit::new(12)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(100), NNDigit::new(1)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(12245), NNDigit::new(11)]);
+        let result = operand1.sub(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_sub3() {
+        let operand1 = NNDigits::new(&[NNDigit::new(12345), NNDigit::new(0xFFFFFFFF)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(1)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(12346), NNDigit::new(4294967293)]);
+        let result = operand1.sub(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_sub4() {
+        let operand1 = NNDigits::new(&[NNDigit::new(1), NNDigit::new(0)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(2), NNDigit::new(0)]);
+        let result = operand1.sub(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

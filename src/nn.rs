@@ -103,7 +103,7 @@ impl NNDigits {
 
     /* Computes result = self + other */
     pub fn add(&self, other: &Self) -> Self {
-        assert!(self.digits.len() == other.digits.len());
+        assert!(self.digits.len() == other.digits.len(), "add operation requires operands to be the same length");
         let mut carry = 0;
         let mut result_digits = Vec::<NNDigit>::new();
 

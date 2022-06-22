@@ -26,6 +26,17 @@ impl NNDigits {
         }
     }
 
+    pub fn set_digit_count(&mut self, digit_count: usize) {
+        if digit_count < self.digits.len() {
+            self.digits.drain(digit_count..);
+        } else {
+            let needed_digits = digit_count - self.digits.len();
+            for _ in 0..needed_digits {
+                self.digits.push(NNDigit::new(0));
+            }
+        }
+    }
+
     /* Decodes character string b into the result, where character string is ordered
     from most to least significant. */
     pub fn decode(b: &[u8]) -> Self {
@@ -80,7 +91,7 @@ impl NNDigits {
 
     /* Assigns self = 0 */
     pub fn assign_zero(&mut self) {
-        self.digits = vec![NNDigit::new(0)];
+        self.digits = vec![NNDigit::new(0); self.digits.len()];
     }
 
     /* Assigns self = 2^exp */
@@ -92,24 +103,11 @@ impl NNDigits {
 
     /* Computes result = self + other */
     pub fn add(&self, other: &Self) -> Self {
+        assert!(self.digits.len() == other.digits.len());
         let mut carry = 0;
         let mut result_digits = Vec::<NNDigit>::new();
 
-        let mut selfdigits = self.digits.clone();
-        let mut otherdigits = other.digits.clone();
-
-        // Extend the number with fewer digits to have the same number of digits
-        if selfdigits.len() < otherdigits.len() {
-            for _ in 0..(otherdigits.len() - selfdigits.len()) {
-                selfdigits.push(NNDigit::new(0));
-            }
-        } else {
-            for _ in 0..(selfdigits.len() - otherdigits.len()) {
-                otherdigits.push(NNDigit::new(0));
-            }
-        }
-
-        for (n1, n2) in selfdigits.iter().zip(otherdigits.iter()) {
+        for (n1, n2) in self.digits.iter().zip(other.digits.iter()) {
             // n1 + carry
             let ai_n = match n1.n.checked_add(carry) {
                 None => {
@@ -136,9 +134,7 @@ impl NNDigits {
             result_digits.push(NNDigit::new(ai_n));
         }
 
-        if carry != 0 {
-            result_digits.push(NNDigit::new(carry));
-        }
+        assert!(self.digits.len() == result_digits.len());
 
         Self {
             digits: result_digits,
@@ -252,8 +248,12 @@ mod tests {
 
     #[test]
     pub fn test_add2() {
-        let operand1 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
-        let operand2 = NNDigits::new(&[NNDigit::new(1)]);
+        let operand1 = NNDigits::new(&[
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0),
+        ]);
+        let operand2 = NNDigits::new(&[NNDigit::new(1), NNDigit::new(0), NNDigit::new(0)]);
         let correct_result = NNDigits::new(&[NNDigit::new(0), NNDigit::new(0), NNDigit::new(1)]);
         let result = operand1.add(&operand2);
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
@@ -262,9 +262,39 @@ mod tests {
     #[test]
     pub fn test_add3() {
         let operand1 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(1)]);
-        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0)]);
         let correct_result = NNDigits::new(&[NNDigit::new(4294967294), NNDigit::new(2)]);
         let result = operand1.add(&operand2);
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_add4() {
+        let operand1 = NNDigits::new(&[NNDigit::new(1), NNDigit::new(1)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(0), NNDigit::new(1)]);
+        let result = operand1.add(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_set_digit_count1() {
+        let mut operand = NNDigits::new(&[NNDigit::new(123), NNDigit::new(321)]);
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(123),
+            NNDigit::new(321),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        operand.set_digit_count(4);
+        assert_eq!(operand.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_set_digit_count2() {
+        let mut operand = NNDigits::new(&[NNDigit::new(123), NNDigit::new(321)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(123)]);
+        operand.set_digit_count(1);
+        assert_eq!(operand.cmp(&correct_result), Ordering::Equal);
     }
 }

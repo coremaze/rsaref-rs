@@ -185,6 +185,38 @@ impl NNDigits {
             digits: result_digits,
         }
     }
+
+    pub fn mult(&self, other: &Self) -> Self {
+        assert!(
+            self.digits.len() == other.digits.len(),
+            "mult operation requires operands to be the same length"
+        );
+
+        let mut accumulator = NNDigits::zero();
+        accumulator.set_digit_count(self.digits.len() * 2);
+
+        for (i1, d1) in self.digits.iter().enumerate() {
+            for (i2, d2) in other.digits.iter().enumerate() {
+                let mut mul: u64 = d1.n as u64 * d2.n as u64;
+                let lower_digit_n = (mul & u32::MAX as u64) as u32;
+                mul >>= u32::BITS;
+                let higher_digit_n = (mul & u32::MAX as u64) as u32;
+
+                let digit_shift = i1 + i2;
+
+                let mut add_digits = NNDigits::zero();
+                add_digits.set_digit_count(accumulator.digits.len());
+                add_digits.digits[digit_shift].n = lower_digit_n;
+                add_digits.digits[digit_shift + 1].n = higher_digit_n;
+
+                accumulator = accumulator.add(&add_digits);
+            }
+        }
+
+        accumulator.set_digit_count(self.digits.len());
+
+        accumulator
+    }
 }
 
 impl Default for NNDigits {
@@ -376,6 +408,105 @@ mod tests {
         let operand2 = NNDigits::new(&[NNDigit::new(0xFFFFFFFF), NNDigit::new(0xFFFFFFFF)]);
         let correct_result = NNDigits::new(&[NNDigit::new(2), NNDigit::new(0)]);
         let result = operand1.sub(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_mult1() {
+        let operand1 = NNDigits::new(&[NNDigit::new(123)]);
+        let operand2 = NNDigits::new(&[NNDigit::new(456)]);
+        let correct_result = NNDigits::new(&[NNDigit::new(56088)]);
+        let result = operand1.mult(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_mult2() {
+        let operand1 = NNDigits::new(&[
+            NNDigit::new(1),
+            NNDigit::new(0xFF),
+            NNDigit::new(123),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let operand2 = NNDigits::new(&[
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0x666),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(4294967295),
+            NNDigit::new(4294967040),
+            NNDigit::new(1515),
+            NNDigit::new(417945),
+            NNDigit::new(201597),
+            NNDigit::new(0),
+        ]);
+        let result = operand1.mult(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_mult3() {
+        let operand1 = NNDigits::new(&[
+            NNDigit::new(1),
+            NNDigit::new(0),
+            NNDigit::new(0xF0F0F0F0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let operand2 = NNDigits::new(&[
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0x10),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(4294967295),
+            NNDigit::new(4294967295),
+            NNDigit::new(252645152),
+            NNDigit::new(4294967295),
+            NNDigit::new(4294967279),
+            NNDigit::new(15),
+        ]);
+        let result = operand1.mult(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_mult4() {
+        let operand1 = NNDigits::new(&[
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let operand2 = NNDigits::new(&[
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0xFFFFFFFF),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(1),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(4294967294),
+            NNDigit::new(4294967295),
+            NNDigit::new(4294967295),
+        ]);
+        let result = operand1.mult(&operand2);
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

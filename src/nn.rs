@@ -217,6 +217,22 @@ impl NNDigits {
 
         accumulator
     }
+
+    pub fn lshift(&self, bits: usize) -> Self {
+        assert!(bits < u32::BITS as usize);
+
+        let mut result = NNDigits::zero();
+        result.set_digit_count(self.digits.len());
+
+
+        let mut shifted: u32 = 0;
+        for (source, dest) in self.digits.iter().zip(result.digits.iter_mut()) {
+            dest.n = (source.n << bits) | shifted;
+            shifted = source.n >> (u32::BITS - bits as u32);
+        }
+        
+        result
+    }
 }
 
 impl Default for NNDigits {
@@ -507,6 +523,60 @@ mod tests {
             NNDigit::new(4294967295),
         ]);
         let result = operand1.mult(&operand2);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_lshift1() {
+        let operand = NNDigits::new(&[
+            NNDigit::new(1),
+        ]);
+        let bits = 3;
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(8),
+        ]);
+        let result = operand.lshift(bits);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+    
+    #[test]
+    pub fn test_lshift2() {
+        let operand = NNDigits::new(&[
+            NNDigit::new(1),
+        ]);
+        let bits = 31;
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(2147483648),
+        ]);
+        let result = operand.lshift(bits);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_lshift3() {
+        let operand = NNDigits::new(&[
+            NNDigit::new(123), NNDigit::new(456),
+        ]);
+        let bits = 16;
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(8060928), NNDigit::new(29884416),
+        ]);
+        let result = operand.lshift(bits);
+        println!("{result:?}");
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_lshift4() {
+        let operand = NNDigits::new(&[
+            NNDigit::new(0x80000000), NNDigit::new(0),
+        ]);
+        let bits = 1;
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(0), NNDigit::new(1),
+        ]);
+        let result = operand.lshift(bits);
+        println!("{result:?}");
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

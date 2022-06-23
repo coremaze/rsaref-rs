@@ -108,7 +108,7 @@ impl NNDigits {
             "add operation requires operands to be the same length"
         );
         let mut carry = 0;
-        let mut result_digits = Vec::<NNDigit>::new();
+        let mut result_digits = Vec::<NNDigit>::with_capacity(self.digits.len());
 
         for (n1, n2) in self.digits.iter().zip(other.digits.iter()) {
             // n1 + carry

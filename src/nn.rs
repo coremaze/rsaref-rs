@@ -232,6 +232,21 @@ impl NNDigits {
 
         result
     }
+
+    pub fn rshift(&self, bits: usize) -> Self {
+        assert!(bits < u32::BITS as usize);
+
+        let mut result = NNDigits::zero();
+        result.set_digit_count(self.digits.len());
+
+        let mut shifted: u32 = 0;
+        for (source, dest) in self.digits.iter().zip(result.digits.iter_mut()).rev() {
+            dest.n = (source.n >> bits) | shifted;
+            shifted = source.n << (u32::BITS - bits as u32);
+        }
+
+        result
+    }
 }
 
 impl Default for NNDigits {
@@ -558,6 +573,28 @@ mod tests {
         let bits = 1;
         let correct_result = NNDigits::new(&[NNDigit::new(0), NNDigit::new(1)]);
         let result = operand.lshift(bits);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_rshift1() {
+        let operand = NNDigits::new(&[NNDigit::new(123)]);
+        let bits = 4;
+        let correct_result = NNDigits::new(&[NNDigit::new(7)]);
+        let result = operand.rshift(bits);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_rshift2() {
+        let operand = NNDigits::new(&[NNDigit::new(123), NNDigit::new(456), NNDigit::new(789)]);
+        let bits = 15;
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(59768832),
+            NNDigit::new(103415808),
+            NNDigit::new(0),
+        ]);
+        let result = operand.rshift(bits);
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

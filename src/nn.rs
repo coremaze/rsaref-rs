@@ -650,13 +650,13 @@ mod tests {
     }
 
     #[test]
-    pub fn test_div1() {
+    pub fn test_divmod1() {
         let divisor = NNDigits::new(&[NNDigit::new(123)]);
         let dividend = NNDigits::new(&[NNDigit::new(2)]);
         let correct_quotient = NNDigits::new(&[NNDigit::new(61)]);
         let correct_mod = NNDigits::new(&[NNDigit::new(1)]);
 
-        let (quotient, modulus) = divisor.div(&dividend);
+        let (quotient, modulus) = divisor.divmod(&dividend);
         println!("{quotient:?}");
         println!("{modulus:?}");
         assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
@@ -664,19 +664,19 @@ mod tests {
     }
 
     #[test]
-    pub fn test_div2() {
+    pub fn test_divmod2() {
         let divisor = NNDigits::new(&[NNDigit::new(0), NNDigit::new(1)]);
         let dividend = NNDigits::new(&[NNDigit::new(4), NNDigit::new(0)]);
         let correct_quotient = NNDigits::new(&[NNDigit::new(1073741824), NNDigit::new(0)]);
         let correct_mod = NNDigits::new(&[NNDigit::new(0), NNDigit::new(0)]);
 
-        let (quotient, modulus) = divisor.div(&dividend);
+        let (quotient, modulus) = divisor.divmod(&dividend);
         assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
         assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
     }
 
     #[test]
-    pub fn test_div3() {
+    pub fn test_divmod3() {
         let divisor = NNDigits::new(&[
             NNDigit::new(123),
             NNDigit::new(456),
@@ -710,7 +710,7 @@ mod tests {
             NNDigit::new(0),
         ]);
 
-        let (quotient, modulus) = divisor.div(&dividend);
+        let (quotient, modulus) = divisor.divmod(&dividend);
         assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
         assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
     }

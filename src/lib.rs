@@ -1,8 +1,8 @@
 mod r_random;
 pub use r_random::RandomStruct;
 
-mod nn;
-pub use nn::{NNDigit, NNDigits, NNHalfDigit};
+mod rsa;
+pub use crate::rsa::{RSAPrivateKey, RSAProtoKey, RSAPublicKey};
 
 #[derive(Debug)]
 pub enum RSAError {
@@ -21,26 +21,3 @@ pub enum RSAError {
     SignatureEncoding,
     EncryptionAlgorithm,
 }
-
-// #[derive(Debug)]
-// pub struct RSAPublicKey {
-//     bits: usize,
-//     modulus: BigUint,
-//     exponent: BigUint,
-// }
-
-// #[derive(Debug)]
-// pub struct RSAPrivateKey {
-//     bits: usize,
-//     modulus: BigUint,
-//     public_exponent: BigUint,
-//     exponent: BigUint,
-//     prime: [BigUint; 2],
-//     prime_exponent: [BigUint; 2],
-//     coefficient: BigUint,
-// }
-
-// pub struct RSAProtoKey {
-//     pub bits: usize,
-//     pub use_fermat4: bool,
-// }

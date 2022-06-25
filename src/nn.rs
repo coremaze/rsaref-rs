@@ -298,6 +298,28 @@ impl NNDigits {
 
         (quotient, modulus)
     }
+
+    /* Computes result = self * c mod d. */
+    pub fn modmult(&self, c: &Self, d: &Self) -> Self {
+        assert!(self.digits.len() == c.digits.len());
+        assert!(self.digits.len() == d.digits.len());
+
+        let mut b2 = self.clone();
+        b2.set_digit_count(self.digits.len() * 2);
+
+        let mut c2 = c.clone();
+        c2.set_digit_count(c.digits.len() * 2);
+
+        let mut d2 = d.clone();
+        d2.set_digit_count(d.digits.len() * 2);
+
+        let t = b2.mult(&c2);
+        let (_, mut result) = t.divmod(&d2);
+
+        result.set_digit_count(self.digits.len());
+
+        result
+    }
 }
 
 impl Default for NNDigits {
@@ -713,5 +735,44 @@ mod tests {
         let (quotient, modulus) = divisor.divmod(&dividend);
         assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
         assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_modmult1() {
+        let b = NNDigits::new(&[
+            NNDigit::new(123),
+            NNDigit::new(456),
+            NNDigit::new(789),
+            NNDigit::new(123),
+            NNDigit::new(456),
+            NNDigit::new(789),
+        ]);
+        let c = NNDigits::new(&[
+            NNDigit::new(1),
+            NNDigit::new(2),
+            NNDigit::new(3),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let d = NNDigits::new(&[
+            NNDigit::new(50),
+            NNDigit::new(50),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_result = NNDigits::new(&[
+            NNDigit::new(3),
+            NNDigit::new(3),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+
+        let result = b.modmult(&c, &d);
+        assert_eq!(result.cmp(&correct_result), Ordering::Equal);
     }
 }

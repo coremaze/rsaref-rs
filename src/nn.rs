@@ -264,7 +264,7 @@ impl NNDigits {
         Ordering::Equal
     }
 
-    pub fn div(&self, other: &Self) -> (Self, Self) {
+    pub fn divmod(&self, other: &Self) -> (Self, Self) {
         assert!(self.digits.len() == other.digits.len());
         let mut zero = Self::zero();
         zero.set_digit_count(self.digits.len());

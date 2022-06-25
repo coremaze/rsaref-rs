@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NNDigit {
     n: u32,
@@ -246,6 +248,55 @@ impl NNDigits {
         }
 
         result
+    }
+
+    pub fn compare(&self, other: &Self) -> Ordering {
+        assert!(self.digits.len() == other.digits.len());
+        for (d1, d2) in self.digits.iter().zip(other.digits.iter()).rev() {
+            if d1 > d2 {
+                return Ordering::Greater;
+            }
+            if d1 < d2 {
+                return Ordering::Less;
+            }
+        }
+
+        Ordering::Equal
+    }
+
+    pub fn div(&self, other: &Self) -> (Self, Self) {
+        assert!(self.digits.len() == other.digits.len());
+        let mut zero = Self::zero();
+        zero.set_digit_count(self.digits.len());
+        assert!(other.compare(&zero) != Ordering::Equal);
+
+        let mut divisor = self.clone();
+        divisor.set_digit_count(divisor.digits.len() * 2);
+
+        let mut dividend = other.clone();
+        dividend.set_digit_count(dividend.digits.len() * 2);
+
+        let mut quotient = zero.clone();
+        quotient.set_digit_count(quotient.digits.len() * 2);
+
+        for i in (0..self.digits.len() * u32::BITS as usize).rev() {
+            let mut nn_bit = NNDigits::zero();
+            nn_bit.assign_2_exp(i as u32);
+            nn_bit.set_digit_count(divisor.digits.len());
+
+            let quotient_high = quotient.clone().add(&nn_bit);
+
+            let try_mult_high = quotient_high.mult(&dividend);
+            if try_mult_high.compare(&divisor).is_le() {
+                quotient = quotient_high;
+            }
+        }
+
+        let mut modulus = divisor.sub(&quotient.mult(&dividend));
+        modulus.set_digit_count(self.digits.len());
+        quotient.set_digit_count(self.digits.len());
+
+        (quotient, modulus)
     }
 }
 
@@ -596,5 +647,71 @@ mod tests {
         ]);
         let result = operand.rshift(bits);
         assert_eq!(result.cmp(&correct_result), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_div1() {
+        let divisor = NNDigits::new(&[NNDigit::new(123)]);
+        let dividend = NNDigits::new(&[NNDigit::new(2)]);
+        let correct_quotient = NNDigits::new(&[NNDigit::new(61)]);
+        let correct_mod = NNDigits::new(&[NNDigit::new(1)]);
+
+        let (quotient, modulus) = divisor.div(&dividend);
+        println!("{quotient:?}");
+        println!("{modulus:?}");
+        assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
+        assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_div2() {
+        let divisor = NNDigits::new(&[NNDigit::new(0), NNDigit::new(1)]);
+        let dividend = NNDigits::new(&[NNDigit::new(4), NNDigit::new(0)]);
+        let correct_quotient = NNDigits::new(&[NNDigit::new(1073741824), NNDigit::new(0)]);
+        let correct_mod = NNDigits::new(&[NNDigit::new(0), NNDigit::new(0)]);
+
+        let (quotient, modulus) = divisor.div(&dividend);
+        assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
+        assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
+    }
+
+    #[test]
+    pub fn test_div3() {
+        let divisor = NNDigits::new(&[
+            NNDigit::new(123),
+            NNDigit::new(456),
+            NNDigit::new(789),
+            NNDigit::new(123),
+            NNDigit::new(456),
+            NNDigit::new(789),
+        ]);
+        let dividend = NNDigits::new(&[
+            NNDigit::new(1),
+            NNDigit::new(2),
+            NNDigit::new(3),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_quotient = NNDigits::new(&[
+            NNDigit::new(2386093233),
+            NNDigit::new(2863311499),
+            NNDigit::new(4294967272),
+            NNDigit::new(262),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+        let correct_mod = NNDigits::new(&[
+            NNDigit::new(1908874186),
+            NNDigit::new(954437082),
+            NNDigit::new(2),
+            NNDigit::new(0),
+            NNDigit::new(0),
+            NNDigit::new(0),
+        ]);
+
+        let (quotient, modulus) = divisor.div(&dividend);
+        assert_eq!(quotient.cmp(&correct_quotient), Ordering::Equal);
+        assert_eq!(modulus.cmp(&correct_mod), Ordering::Equal);
     }
 }

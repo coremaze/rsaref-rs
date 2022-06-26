@@ -298,6 +298,14 @@ impl RSAPrivateKey {
         })
     }
 
+    pub fn public_key(&self) -> RSAPublicKey {
+        RSAPublicKey {
+            bits: self.bits,
+            modulus: self.modulus.clone(),
+            exponent: self.public_exponent.clone(),
+        }
+    }
+
     pub fn rsa_private_encrypt(&self, input: &[u8]) -> Result<Vec<u8>, RSAError> {
         let modulus_len = ((self.bits + 7) / 8) as usize;
         if input.len() + 11 > modulus_len {

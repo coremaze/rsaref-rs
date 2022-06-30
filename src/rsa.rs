@@ -35,8 +35,9 @@ impl RSASerialize for BigUint {
 
 use crate::RSAError;
 
-const MAX_RSA_MODULUS_BITS: usize = 1024;
-const MAX_RSA_MODULUS_LEN: usize = (MAX_RSA_MODULUS_BITS + 7) / 8;
+pub const MIN_RSA_MODULUS_BITS: usize = 508;
+pub const MAX_RSA_MODULUS_BITS: usize = 1024;
+pub const MAX_RSA_MODULUS_LEN: usize = (MAX_RSA_MODULUS_BITS + 7) / 8;
 
 #[derive(Debug)]
 pub struct RSAPublicKey {
@@ -62,6 +63,14 @@ pub struct RSAProtoKey {
 }
 
 impl RSAPublicKey {
+    pub fn from_components(bits: u32, modulus: BigUint, exponent: BigUint) -> Self {
+        Self {
+            bits,
+            modulus,
+            exponent,
+        }
+    }
+
     pub fn encode(&self) -> Vec<u8> {
         let mut result = Vec::<u8>::with_capacity(260);
 
@@ -222,6 +231,25 @@ impl RSAPublicKey {
 }
 
 impl RSAPrivateKey {
+    pub fn from_components(
+        bits: u32,
+        modulus: BigUint,
+        public_exponent: BigUint,
+        exponent: BigUint,
+        prime: [BigUint; 2],
+        prime_exponent: [BigUint; 2],
+        coefficient: BigUint,
+    ) -> Self {
+        Self {
+            bits,
+            modulus,
+            public_exponent,
+            exponent,
+            prime,
+            prime_exponent,
+            coefficient,
+        }
+    }
     pub fn encode(&self) -> Vec<u8> {
         let mut result = Vec::<u8>::with_capacity(708);
 

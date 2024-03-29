@@ -3,6 +3,7 @@ use md5::{Digest, Md5};
 
 const RANDOM_BYTES_NEEDED: usize = 256;
 
+#[derive(Debug)]
 pub struct RandomStruct {
     bytes_needed: usize,
     state: [u8; 16],
@@ -53,8 +54,7 @@ impl RandomStruct {
 
         let mut available: usize = self.output_available;
 
-        let mut block: Vec<u8> = Vec::new();
-        block.reserve(block_len);
+        let mut block: Vec<u8> = Vec::with_capacity(block_len);
 
         while block_len > available {
             block.extend_from_slice(&self.output[(self.output.len() - available)..]);
